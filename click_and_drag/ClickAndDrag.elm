@@ -64,18 +64,6 @@ initialModel =
   }
 
 
-buildObject : Signal.Address Action -> String -> Html
-buildObject address content =
-  span [ class "object"
-       , id content
-       , draggable "true"
-       , on "dragstart" Json.value (\_ -> Signal.message address (Dragging content))
-       ]
-       [ text content ]
-
-
--- View
-
 type alias Options =
     { stopPropagation : Bool
     , preventDefault : Bool
@@ -86,6 +74,18 @@ defaultOptions =
     { stopPropagation = False
     , preventDefault = True
     }
+
+
+-- View
+
+buildObject : Signal.Address Action -> String -> Html
+buildObject address content =
+  span [ class "object"
+       , id content
+       , draggable "true"
+       , on "dragstart" Json.value (\_ -> Signal.message address (Dragging content))
+       ]
+       [ text content ]
 
 
 items : Signal.Address Action -> String -> List String -> Html
@@ -125,6 +125,8 @@ model : Signal Model
 model =
   Signal.foldp update initialModel actions
 
+
+-- Main
 
 main : Signal Html
 main =
