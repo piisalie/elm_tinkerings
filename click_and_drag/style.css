@@ -1,0 +1,25 @@
+#container {
+  padding: 4px;
+}
+
+#left {
+  float: left;
+  margin: 5px;
+  width: 200px;
+  border-style: solid;
+  border-width: 2px;
+  padding: 10px;
+}
+
+#right {
+  float: left;
+  margin: 5px;
+  width: 200px;
+  border-style: solid;
+  border-width: 2px;
+  padding: 10px;
+}
+
+.object {
+  display: block;
+}
