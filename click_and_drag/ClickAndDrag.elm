@@ -33,12 +33,12 @@ update action model =
       if side == "right"
 
       then { model |
-             right <- model.dragging :: model.right
+             right <- model.dragging :: remainingRight
            , left  <- remainingLeft
            , dragging <- "" }
 
       else { model |
-             left <- model.dragging :: model.left
+             left <- model.dragging :: remainingLeft
            , right <- remainingRight
            , dragging <- "" }
 
