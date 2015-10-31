@@ -14,7 +14,17 @@ import Debug exposing(..)
 type Action
   = NoOp
   | Dropped String
-  | Dragging String
+  | Dragging Int
+
+
+findById : Int -> List Object -> Object
+findById id list =
+  let
+    found = List.head (List.filter (\o -> o.id == id) list)
+  in
+    case found of
+      Just obj -> obj
+      Nothing -> newObject "nothing" 0
 
 
 update : Action -> Model -> Model
@@ -26,72 +36,90 @@ update action model =
 
     Dropped side ->
       let
-        remainingLeft = List.filter (\o -> o /= model.dragging) model.left
-        remainingRight = List.filter (\o -> o /= model.dragging) model.right
+        obj            = findById model.dragging (model.left ++ model.right)
+        remainingLeft  = List.filter (\o -> o /= obj) model.left
+        remainingRight = List.filter (\o -> o /= obj) model.right
       in
 
       if side == "right"
 
       then { model |
-             right <- model.dragging :: remainingRight
+             right <- obj :: remainingRight
            , left  <- remainingLeft
-           , dragging <- "" }
+           , dragging <- 0 }
 
       else { model |
-             left <- model.dragging :: remainingLeft
+             left <- obj :: remainingLeft
            , right <- remainingRight
-           , dragging <- "" }
+           , dragging <- 0 }
 
 
-    Dragging txt ->
-      { model | dragging <- txt}
+    Dragging id ->
+      { model | dragging <- id}
 
 
 -- Model
 
 type alias Model =
-  { left  : List String
-  , right : List String
-  , dragging: String
+  { left     : List Object
+  , right    : List Object
+  , dragging : Int
+  }
+
+
+type alias Options =
+  { stopPropagation : Bool
+  , preventDefault  : Bool
+  }
+
+
+type alias Object =
+  { content : String
+  , id      : Int
+  }
+
+
+newObject : String -> Int -> Object
+newObject content id =
+  { content = content
+  , id      = id
   }
 
 
 initialModel : Model
 initialModel =
-  { left  = [ "one", "two" ]
-  , right = [ "three", "four" ]
-  , dragging = ""
+  { left     = [ newObject "one" 1
+               , newObject "two" 2
+               ]
+  , right    = [ newObject "three" 3
+               , newObject "four"  4
+               ]
+  , dragging = 0
   }
-
-
-type alias Options =
-    { stopPropagation : Bool
-    , preventDefault : Bool
-    }
 
 
 defaultOptions =
     { stopPropagation = False
-    , preventDefault = True
+    , preventDefault  = True
     }
 
 
 -- View
 
-buildObject : Signal.Address Action -> String -> Html
-buildObject address content =
-  span [ class "object"
-       , id content
+buildObjectDiv : Signal.Address Action -> Object -> Html
+buildObjectDiv address obj =
+  div [ class "object"
+       , id (toString obj.id)
        , draggable "true"
-       , on "dragstart" Json.value (\_ -> Signal.message address (Dragging content))
+       , on "dragstart" Json.value (\_ -> Signal.message address (Dragging (obj.id)))
        ]
-       [ text content ]
+       [ text obj.content ]
 
 
-items : Signal.Address Action -> String -> List String -> Html
+items : Signal.Address Action -> String -> List Object -> Html
 items address side objs =
   let
-    objects = List.map (buildObject address) objs
+    objects = List.map (buildObjectDiv address) objs
   in
   div [ id side
       , onWithOptions "dragover" defaultOptions Json.value (\_ -> Signal.message address NoOp)
