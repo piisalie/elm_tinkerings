@@ -15,6 +15,7 @@ type Action
   = NoOp
   | Dropped String
   | Dragging Int
+  | OverObj Int
 
 
 findById : Int -> List Object -> Object
@@ -27,6 +28,46 @@ findById id list =
       Nothing -> newObject "nothing" 0
 
 
+insertObj : Object -> Object -> List Object -> List Object
+insertObj object overObj list  =
+  let
+    beginning = takeWhile (\e -> e /= overObj) list
+    end       = dropWhile (\e -> e /= overObj) list
+
+  in
+    List.concat [ beginning, [ object ], end ]
+
+
+dropWhile : (a -> Bool) -> List a -> List a
+dropWhile condition list =
+  case list of
+
+  [ ] -> [ ]
+
+  first :: rest ->
+
+    if (condition first) then
+      dropWhile condition rest
+
+    else
+      first :: rest
+
+
+takeWhile : (a -> Bool) -> List a -> List a
+takeWhile condition list =
+  case list of
+
+    [ ] -> [ ]
+
+    first :: rest ->
+
+      if (condition first) then
+        first :: takeWhile condition rest
+
+      else
+        [ ]
+
+
 update : Action -> Model -> Model
 update action model =
   case action of
@@ -37,6 +78,7 @@ update action model =
     Dropped side ->
       let
         obj            = findById model.dragging (model.left ++ model.right)
+        overObj        = findById model.overObj  (model.left ++ model.right)
         remainingLeft  = List.filter (\o -> o /= obj) model.left
         remainingRight = List.filter (\o -> o /= obj) model.right
       in
@@ -44,18 +86,25 @@ update action model =
       if side == "right"
 
       then { model |
-             right <- obj :: remainingRight
+             right <- insertObj obj overObj remainingRight
            , left  <- remainingLeft
-           , dragging <- 0 }
+           , dragging <- 0
+           , overObj  <- 0
+           }
 
       else { model |
-             left <- obj :: remainingLeft
+             left  <- insertObj obj overObj remainingLeft
            , right <- remainingRight
-           , dragging <- 0 }
-
+           , dragging <- 0
+           , overObj  <- 0
+           }
 
     Dragging id ->
-      { model | dragging <- id}
+      { model | dragging <- id }
+
+    OverObj id ->
+      Debug.log (toString id)
+      { model | overObj <- id }
 
 
 -- Model
@@ -64,6 +113,7 @@ type alias Model =
   { left     : List Object
   , right    : List Object
   , dragging : Int
+  , overObj  : Int
   }
 
 
@@ -95,6 +145,7 @@ initialModel =
                , newObject "four"  4
                ]
   , dragging = 0
+  , overObj  = 0
   }
 
 
@@ -112,6 +163,7 @@ buildObjectDiv address obj =
        , id (toString obj.id)
        , draggable "true"
        , on "dragstart" Json.value (\_ -> Signal.message address (Dragging (obj.id)))
+       , onWithOptions "dragover" defaultOptions Json.value (\_ -> Signal.message address (OverObj (obj.id)))
        ]
        [ text obj.content ]
 
