@@ -22,20 +22,30 @@ findById : Int -> List Object -> Object
 findById id list =
   let
     found = List.head (List.filter (\o -> o.id == id) list)
+
   in
     case found of
       Just obj -> obj
+
       Nothing -> newObject "nothing" 0
 
 
 insertObj : Object -> Object -> List Object -> List Object
 insertObj object overObj list  =
   let
-    beginning = takeWhile (\e -> e /= overObj) list
-    end       = dropWhile (\e -> e /= overObj) list
+    filtered    = List.filter (\o -> o /= object) list
+    beginning   = takeWhile (\e -> e /= overObj) filtered
+    end         = dropWhile (\e -> e /= overObj) filtered
+    countToOver = List.length ( takeWhile (\e -> e /= overObj) list )
+    countToObj  = List.length ( takeWhile (\e -> e /= object) list )
+
+    insertion = if | object == overObj        -> [ object ]
+                   | countToObj < countToOver -> [ overObj, object ]
+                   | countToObj > countToOver -> [ object, overObj ]
+                   | otherwise                -> [ object ]
 
   in
-    List.concat [ beginning, [ object ], end ]
+    List.concat [ beginning, insertion, end ]
 
 
 dropWhile : (a -> Bool) -> List a -> List a
@@ -50,7 +60,7 @@ dropWhile condition list =
       dropWhile condition rest
 
     else
-      first :: rest
+      rest
 
 
 takeWhile : (a -> Bool) -> List a -> List a
@@ -86,14 +96,14 @@ update action model =
       if side == "right"
 
       then { model |
-             right <- insertObj obj overObj remainingRight
+             right <- insertObj obj overObj model.right
            , left  <- remainingLeft
            , dragging <- 0
            , overObj  <- 0
            }
 
       else { model |
-             left  <- insertObj obj overObj remainingLeft
+             left  <- insertObj obj overObj model.left
            , right <- remainingRight
            , dragging <- 0
            , overObj  <- 0
@@ -103,7 +113,6 @@ update action model =
       { model | dragging <- id }
 
     OverObj id ->
-      Debug.log (toString id)
       { model | overObj <- id }
 
 
